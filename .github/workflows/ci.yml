@@ -1,0 +1,39 @@
+
+name: MALICK - CI - Build et Push Docker
+
+run-name: ${{ github.actor }} - CI
+
+on:
+  push:
+    branches:
+      - dev
+
+  pull_request:
+    branches:
+      - dev
+
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Récupérer le code
+      - name: 1. Récupérer le code
+        uses: actions/checkout@v4
+
+      # 2. Créer le fichier .env du backend
+      - name: 2. Créer le fichier .env
+        run: |
+          echo "PORT=3000" > backend/.env
+
+      # 3. Installer les dépendances du backend
+      - name: 3. Installer les dépendances
+        working-directory: backend
+        run: npm ci
+
+      # 4. Exécuter les tests
+      - name: 4. Exécuter les tests
+        working-directory: backend
+        run: npm test
