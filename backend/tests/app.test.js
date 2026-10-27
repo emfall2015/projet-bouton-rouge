@@ -17,12 +17,7 @@ describe("POST /login", () => {
 
   // Test pour les identifiants incorrectes
   test("retourne 401 avec un mauvais mot de passe", async () => {
-    const response = await request(app)
-      .post("/login")
-      .send({
-        username: "admin",
-        password: "wrong"
-      });
+    const response = await request(app).post("/login").send({ username: "admin", password: "wrong" });
 
     expect(response.status).toBe(401);
     expect(response.body).toEqual({
@@ -33,9 +28,7 @@ describe("POST /login", () => {
 
   // Test pour les identifiants non renseignés
   test("retourne 401 si les identifiants sont absents", async () => {
-    const response = await request(app)
-      .post("/login")
-      .send({});
+    const response = await request(app).post("/login").send({});
 
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
@@ -44,13 +37,11 @@ describe("POST /login", () => {
 
 
 describe("POST /click", () => {
-// Vérifier les valeurs valides (1, 15, 29) par exemple ;
+  // Vérifier les valeurs valides (1, 15, 29) par exemple ;
   test.each([1, 15, 29])(
     "accepte count = %i",
     async (count) => {
-      const response = await request(app)
-        .post("/click")
-        .send({ count });
+      const response = await request(app).post("/click").send({ count });
 
       expect(response.status).toBe(200);
       expect(response.body.count).toBe(count);
@@ -61,9 +52,7 @@ describe("POST /click", () => {
 
   // le comportement spécial lorsque count === 30.
   test("retourne finished: true lorsque count vaut 30", async () => {
-    const response = await request(app)
-      .post("/click")
-      .send({ count: 30 });
+    const response = await request(app).post("/click").send({ count: 30 });
 
     expect(response.status).toBe(200);
     expect(response.body.count).toBe(30);
@@ -75,9 +64,7 @@ describe("POST /click", () => {
   test.each([0, -1, 31, 100, 1.5, "5", null, undefined])(
     "rejette count = %s",
     async (count) => {
-      const response = await request(app)
-        .post("/click")
-        .send({ count });
+      const response = await request(app).post("/click").send({ count });
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
@@ -89,9 +76,7 @@ describe("POST /click", () => {
 
   test("rejette un corps vide", async () => {
     // l'absence de count 
-    const response = await request(app)
-      .post("/click")
-      .send({});
+    const response = await request(app).post("/click").send({});
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
