@@ -26,7 +26,7 @@ jobs:
       # 2. Créer le fichier .env du backend
       - name: 2. Créer le fichier .env
         run: |
-          echo "PORT=3000" > backend/.env
+          echo "PORT=3002" > backend/.env
 
       # 3. Installer les dépendances du backend
       - name: 3. Installer les dépendances
@@ -70,7 +70,7 @@ jobs:
       - name: 9. Tester le backend
         run: |
           for i in $(seq 1 30); do
-            if curl -f http://localhost:3000/api/health; then
+            if curl -f http://localhost:3002/api/health; then
               echo "Backend disponible !"
               exit 0
             fi
@@ -85,12 +85,12 @@ jobs:
       # 10. Tester l'API
       - name: 10. Tester les endpoints
         run: |
-          curl --fail http://localhost:3000/api/health
+          curl --fail http://localhost:3002/api/health
 
       # 11. Tester le frontend
       - name: 11. Tester le frontend
         run: |
-          curl --fail http://localhost:4200/
+          curl --fail http://localhost:4202/
 
       # 12. Afficher les logs en cas de problème
       - name: 12. Afficher les logs
