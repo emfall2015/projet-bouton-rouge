@@ -73,7 +73,19 @@ app.post("/click", (req, res) => {
 	});
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-	console.log(`API démarrée sur le port ${PORT}`);
+// Route de test 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
+
+if (require.main === module) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`API démarrée sur le port ${PORT}`);
+  });
+}
+
 module.exports = app;
+// app.listen(PORT, "0.0.0.0", () => {
+// 	console.log(`API démarrée sur le port ${PORT}`);
+// });
+// module.exports = app;
