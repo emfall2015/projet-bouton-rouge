@@ -4,6 +4,9 @@ FROM node:22-alpine
 # Définir le répertoire de travail de l'application dans le conteneur
 WORKDIR /app
 
+# Mettre à jour npm et ses dépendances intégrées
+RUN npm install --global npm@latest
+
 # Copier les fichiers de configuration npm (package.json et package-lock.json)
 COPY package*.json ./
 
