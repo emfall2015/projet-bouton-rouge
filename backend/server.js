@@ -5,6 +5,8 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+const testRoute = require("./test-gitleaks");
+
 app.use(cors());
 app.use(express.json());
 
@@ -85,7 +87,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-// app.listen(PORT, "0.0.0.0", () => {
-// 	console.log(`API démarrée sur le port ${PORT}`);
-// });
-// module.exports = app;
