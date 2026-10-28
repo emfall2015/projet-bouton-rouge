@@ -1,4 +1,4 @@
-# Étape 1 : Construire l'application frontend
+# # Étape 1 : Construire l'application frontend
 # FROM node:22-alpine AS build
 
 # WORKDIR /app
@@ -31,8 +31,13 @@
 # USER nginx
 
 
-# Étape 1 : Construire l'application frontend
-FROM node:22-alpine AS build
+# syntax=docker/dockerfile:1
+
+# ============================================================
+# BUILD
+# ============================================================
+
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -40,34 +45,39 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build
 
-# Étape 2 : Servir les fichiers avec Nginx
-FROM nginx:alpine
+ARG ENV=production
 
-# Copier la configuration Nginx personnalisée
+RUN case "$ENV" in \
+      production|preprod) ;; \
+      *) echo "Unsupported Angular environment: $ENV" >&2; exit 1 ;; \
+    esac \
+    && npm run ng -- build --configuration="$ENV"
+
+
+# ============================================================
+# RUNTIME
+# ============================================================
+
+FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
+
+USER root
+RUN apk upgrade --no-cache libexpat
+USER 101
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copier les fichiers compilés
-COPY --from=build /app/dist/le-bouton-rouge-frontend/browser /usr/share/nginx/html
+COPY --from=builder \
+    --chown=101:0 \
+    /app/dist/angular-starter/browser \
+    /usr/share/nginx/html
 
-# Préparer les répertoires nécessaires à Nginx
-RUN chown -R nginx:nginx /usr/share/nginx/html \
-    /var/cache/nginx \
-    /var/log/nginx \
-    /etc/nginx/conf.d \
-    && touch /var/run/nginx.pid \
-    && chown nginx:nginx /var/run/nginx.pid
 
-# Utiliser un port non privilégié et un répertoire temporaire accessible
-RUN sed -i 's/listen 80;/listen 8080;/' /etc/nginx/conf.d/default.conf \
-    && mkdir -p /tmp/nginx/client_temp /tmp/nginx/proxy_temp \
-       /tmp/nginx/fastcgi_temp /tmp/nginx/uwsgi_temp /tmp/nginx/scgi_temp \
-    && chown -R nginx:nginx /tmp/nginx
+USER 101
 
-# Indiquer le port utilisé par Nginx
 EXPOSE 8080
 
-USER nginx
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
