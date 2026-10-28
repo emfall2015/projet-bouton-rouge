@@ -52,6 +52,18 @@ jobs:
             --exit-code 1 \
             /path
 
+      
+      # 4. Scanner les fichiers et dépendances avec Trivy
+      - name: 4. Scanner le dépôt avec Trivy
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+
       # 4. Créer le fichier .env du backend
       - name: 4. Créer le fichier .env
         run: |
@@ -82,12 +94,35 @@ jobs:
             -t emfall/bouton-rouge-backend:latest \
             ./backend
 
+       # 7. Scanner  l'image backend
+      - name: 7.1 Scanner l'image backend avec Trivy
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          image-ref: emfall/bouton-rouge-backend:latest
+          scan-type: image
+          scanners: vuln
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
       # 8. Construire l'image frontend
       - name: 8. Construire le frontend
         run: |
           docker build \
             -t emfall/bouton-rouge-frontend:latest \
             ./frontend
+      # 8.1 Scanner l'image frontend
+      - name: Scanner l'image frontend avec Trivy
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          image-ref: emfall/bouton-rouge-frontend:latest
+          scan-type: image
+          scanners: vuln
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
 
       # 9. Lancer les conteneurs pour les tests
       - name: 9. Lancer les conteneurs
