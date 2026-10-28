@@ -1,3 +1,4 @@
+
 name: MALICK - CI - Build et Push Docker
 
 run-name: ${{ github.actor }} - CI
@@ -6,7 +7,6 @@ on:
   pull_request:
     branches:
       - dev
-
   workflow_dispatch:
 
 permissions:
@@ -18,136 +18,121 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Récupérer le dépôt et tout son historique Git
-      - name: 1. Récupérer le code
+      # 1. Récupérer tout l'historique Git
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      # 2. Scanner l'historique Git avec Gitleaks
-      - name: 2. Détecter les secrets dans Git
+      # 2. Scanner l'historique Git
+      - name: Gitleaks - Scan Git history
         run: |
           docker run --rm \
             --network none \
             -e GIT_CONFIG_COUNT=1 \
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0=/path \
-            -v "$GITHUB_WORKSPACE:/path:ro" \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/path,readonly" \
             ghcr.io/gitleaks/gitleaks:v8.30.1 \
             git --log-opts="--all" \
-            --redact \
-            --exit-code 1 \
-            /path
+            --redact --exit-code 1 /path
 
-      # 3. Scanner les fichiers courants
-      - name: 3. Détecter les secrets dans les fichiers
+      # 3. Scanner les fichiers du dépôt
+      - name: Gitleaks - Scan files
         run: |
           docker run --rm \
             --network none \
-            -v "$GITHUB_WORKSPACE:/path:ro" \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/path,readonly" \
             ghcr.io/gitleaks/gitleaks:v8.30.1 \
-            dir \
-            --redact \
-            --exit-code 1 \
-            /path
+            dir --redact --exit-code 1 /path
 
-      # 4. Créer le fichier .env du backend
-      - name: 4. Créer le fichier .env
-        run: |
-          echo "PORT=3002" > backend/.env
+      # 4. Configurer Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
-      # 5. Installer les dépendances du backend
-      - name: 5. Installer les dépendances
+      # 5. Installer les dépendances backend
+      - name: Install backend dependencies
         working-directory: backend
         run: npm ci
 
-      # 6. Exécuter les tests
-      - name: 6. Exécuter les tests
+      # 6. Créer l'environnement nécessaire aux tests
+      - name: Configure backend environment
+        run: |
+          echo "PORT=3002" > backend/.env
+
+      # 7. Exécuter les tests
+      - name: Run backend tests
         working-directory: backend
         run: npm test
 
-      # 7. Construire l'image backend
-      - name: 7. Construire le backend
+      # 8. Construire les images Docker
+      - name: Build backend image
         run: |
           docker build \
             -t emfall/bouton-rouge-backend:latest \
             ./backend
 
-      # 8. Construire l'image frontend
-      - name: 8. Construire le frontend
+      - name: Build frontend image
         run: |
           docker build \
             -t emfall/bouton-rouge-frontend:latest \
             ./frontend
 
-      # 9. Lancer les conteneurs pour les tests
-      - name: 9. Lancer les conteneurs
+      # 9. Démarrer les services
+      - name: Start Docker Compose
         run: docker compose up -d
 
       # 10. Vérifier l'état des conteneurs
-      - name: 10. Vérifier les conteneurs
+      - name: Check Docker Compose
         run: docker compose ps
 
-      # 11. Tester la disponibilité du backend
-      - name: 11. Tester le backend
+      # 11. Vérifier le backend
+      - name: Check backend health
         run: |
           for i in $(seq 1 30); do
-            if curl --fail http://localhost:3002/api/health; then
-              echo "Backend disponible !"
+            if curl --fail --silent http://localhost:3002/health; then
+              echo "Backend accessible."
               exit 0
             fi
-
-            sleep 1
+            sleep 2
           done
-
-          echo "Le backend ne répond pas"
-          docker compose logs backend
+          echo "Backend inaccessible après 60 secondes."
           exit 1
 
-      # 12. Tester l'API
-      - name: 12. Tester les endpoints
+      # 12. Vérifier le frontend
+      - name: Check frontend
         run: |
-          curl --fail http://localhost:3002/api/health
+          curl --fail --show-error --silent \
+            http://localhost:3000/
 
-      # 13. Tester le frontend
-      - name: 13. Tester le frontend
-        run: |
-          curl --fail http://localhost:4202/
-
-      # 14. Afficher les logs en cas de problème
-      - name: 14. Afficher les logs
+      # 13. Afficher les logs, même en cas d'échec
+      - name: Docker logs
         if: always()
-        run: docker compose logs
+        run: docker compose logs --no-color || true
 
-      # 15. Arrêter les conteneurs
-      - name: 15. Arrêter les conteneurs
+      # 14. Arrêter les conteneurs
+      - name: Stop Docker Compose
         if: always()
-        run: docker compose down
+        run: docker compose down --remove-orphans
 
-      # 16. Connexion à Docker Hub uniquement pour une exécution manuelle
-      - name: 16. Connexion à Docker Hub
-        if: >-
-          success() &&
-          github.event_name == 'workflow_dispatch'
+      # 15. Connexion Docker Hub uniquement au lancement manuel
+      - name: Login to Docker Hub
+        if: success() && github.event_name == 'workflow_dispatch'
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 17. Publier le backend uniquement après tous les contrôles
-      - name: 17. Push backend
-        if: >-
-          success() &&
-          github.event_name == 'workflow_dispatch'
-        run: |
-          docker push emfall/bouton-rouge-backend:latest
+      # 16. Publier les images uniquement si toutes les étapes précédentes réussissent
+      - name: Push backend image
+        if: success() && github.event_name == 'workflow_dispatch'
+        run: docker push emfall/bouton-rouge-backend:latest
 
-      # 18. Publier le frontend uniquement après tous les contrôles
-      - name: 18. Push frontend
-        if: >-
-          success() &&
-          github.event_name == 'workflow_dispatch'
-        run: |
-          docker push emfall/bouton-rouge-frontend:latest
-
+      - name: Push frontend image
+        if: success() && github.event_name == 'workflow_dispatch'
+        run: docker push emfall/bouton-rouge-frontend:latest
