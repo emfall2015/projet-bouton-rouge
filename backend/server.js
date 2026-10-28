@@ -5,8 +5,6 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-//const testRoute = require("./test-gitleaks");
-const testRoute = require("./test-gitleaks");
 app.use(cors());
 app.use(express.json());
 
