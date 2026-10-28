@@ -1,38 +1,31 @@
-# Étape 1 : Construire l'application frontend avec Node.js
+# Étape 1 : Construire l'application frontend
 FROM node:22-alpine AS build
 
-# Définir le répertoire de travail pour la compilation
 WORKDIR /app
 
-# Copier les fichiers de dépendances npm
 COPY package*.json ./
 
-# Installer les dépendances nécessaires à la compilation
-RUN npm install
+RUN npm ci
 
-# Copier le code source du frontend dans le conteneur
 COPY . .
 
-# Compiler l'application frontend pour la production
 RUN npm run build
 
-# Étape 2 : Servir les fichiers compilés avec Nginx
+# Étape 2 : Servir les fichiers avec Nginx
 FROM nginx:alpine
+
+# Mettre à jour les paquets système Alpine
+RUN apk upgrade --no-cache
 
 # Copier la configuration Nginx personnalisée
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copier les fichiers compilés depuis l'étape de build
+# Copier les fichiers compilés
 COPY --from=build /app/dist/le-bouton-rouge-frontend/browser /usr/share/nginx/html
 
-# Donner à Nginx les permissions nécessaires pour lire les fichiers du frontend
+# Donner les permissions de lecture à Nginx
 RUN chown -R nginx:nginx /usr/share/nginx/html
 
-# Indiquer le port HTTP utilisé par le serveur web
 EXPOSE 80
 
-# Exécuter Nginx avec un utilisateur non privilégié
 USER nginx
-
-
-
