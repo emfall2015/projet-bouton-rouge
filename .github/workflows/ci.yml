@@ -113,7 +113,7 @@ jobs:
             -t emfall/bouton-rouge-frontend:latest \
             ./frontend
       # 8.1 Scanner l'image frontend
-      - name: Scanner l'image frontend avec Trivy
+      - name: 8.1 Scanner l'image frontend avec Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: emfall/bouton-rouge-frontend:latest
