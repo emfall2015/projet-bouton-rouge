@@ -55,7 +55,7 @@ jobs:
       
       # 4. Scanner les fichiers et dépendances avec Trivy
       - name: 4. Scanner le dépôt avec Trivy
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -96,7 +96,7 @@ jobs:
 
        # 7. Scanner  l'image backend
       - name: 7.1 Scanner l'image backend avec Trivy
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: emfall/bouton-rouge-backend:latest
           scan-type: image
@@ -114,7 +114,7 @@ jobs:
             ./frontend
       # 8.1 Scanner l'image frontend
       - name: Scanner l'image frontend avec Trivy
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: emfall/bouton-rouge-frontend:latest
           scan-type: image
