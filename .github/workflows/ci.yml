@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-and-push:
-    name: Gitleaks, health,  Tests et Docker
+    name: Gitleaks, health, Audit, Tests et Docker
     runs-on: ubuntu-latest
 
     steps:
