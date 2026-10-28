@@ -1,19 +1,19 @@
-# # Étape 1 : Construire l'application frontend avec Node.js
+# Étape 1 : Construire l'application frontend avec Node.js
 # FROM node:22-alpine AS build
 
-# # Définir le répertoire de travail pour la compilation
+# Définir le répertoire de travail pour la compilation
 # WORKDIR /app
 
 # # Copier les fichiers de dépendances npm
 # COPY package*.json ./
 
-# # Installer les dépendances nécessaires à la compilation
+# Installer les dépendances nécessaires à la compilation
 # RUN npm install
 
 # # Copier le code source du frontend dans le conteneur
 # COPY . .
 
-# # Compiler l'application frontend pour la production
+# Compiler l'application frontend pour la production
 # RUN npm run build
 
 # # Étape 2 : Servir les fichiers compilés avec Nginx
