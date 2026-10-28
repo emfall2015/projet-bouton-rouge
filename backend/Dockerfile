@@ -24,20 +24,14 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Mettre à jour npm
-RUN npm install --global npm@latest
-
-# Corriger la dépendance undici intégrée à npm
-RUN npm install --prefix "$(npm root -g)/npm" undici@6.29.1 --save-exact
-
-# Installer les dépendances de production du backend
 COPY package*.json ./
-RUN npm install --omit=dev
 
-# Copier le serveur
+RUN npm install --omit=dev \
+    && npm cache clean --force \
+    && rm -rf "$(npm root -g)/npm"
+
 COPY --chown=node:node server.js ./
 
-# Utiliser un utilisateur non privilégié
 USER node
 
 EXPOSE 3000
