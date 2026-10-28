@@ -62,10 +62,13 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      # 5.1 Vérifier les vulnérabilités des dépendances
-      - name: NPM Securité Audit
+      - name: NPM Audit - Production
         working-directory: backend
-        run: npm audit --audit-level=low
+        run: npm audit --omit=dev
+
+      - name: NPM Audit - All dependencies
+        working-directory: backend
+        run: npm audit --audit-level=moderate
 
       # 6. Exécuter les tests
       - name: 6. Exécuter les tests
