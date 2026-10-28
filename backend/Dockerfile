@@ -1,26 +1,24 @@
-# Utiliser l'image officielle de Node.js 22 basée sur Alpine Linux
+
+# Utiliser Node.js 22 sur Alpine Linux
 FROM node:22-alpine
 
-# Définir le répertoire de travail de l'application dans le conteneur
 WORKDIR /app
 
 # Mettre à jour npm et ses dépendances intégrées
 RUN npm install --global npm@latest
 
-# Copier les fichiers de configuration npm (package.json et package-lock.json)
+# Copier les fichiers de dépendances du backend
 COPY package*.json ./
 
-# Installer uniquement les dépendances nécessaires en production
+# Installer uniquement les dépendances de production
 RUN npm install --omit=dev
 
-# Copier le fichier server et attribuer sa propriété à l'utilisateur node
+# Copier le serveur et attribuer les droits à l'utilisateur node
 COPY --chown=node:node server.js ./
 
-# Exécuter l'application avec un utilisateur non privilégié (sécurité Trivy)
+# Exécuter l'application sans privilèges root
 USER node
 
-# Indiquer le port utilisé par l'application dans le conteneur
 EXPOSE 3000
 
-# Démarrer le serveur Node.js au lancement du conteneur
 CMD ["node", "server.js"]
