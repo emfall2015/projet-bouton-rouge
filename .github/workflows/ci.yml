@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-and-push:
-    name: Gitleaks, Tests et Docker
+    name: Gitleaks, health,  Tests et Docker
     runs-on: ubuntu-latest
 
     steps:
@@ -61,6 +61,11 @@ jobs:
       - name: 5. Installer les dépendances
         working-directory: backend
         run: npm ci
+
+      # 5.1 Vérifier les vulnérabilités des dépendances
+      - name: NPM Securité Audit
+        working-directory: backend
+        run: npm audit --audit-level=low
 
       # 6. Exécuter les tests
       - name: 6. Exécuter les tests
