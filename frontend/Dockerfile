@@ -1,43 +1,5 @@
-# # Étape 1 : Construire l'application frontend
-# FROM node:22-alpine AS build
-
-# WORKDIR /app
-
-# COPY package*.json ./
-
-# RUN npm ci
-
-# COPY . .
-
-# RUN npm run build
-
-# # Étape 2 : Servir les fichiers avec Nginx
-# FROM nginx:alpine
-
-# # Mettre à jour les paquets système Alpine
-# RUN apk upgrade --no-cache
-
-# # Copier la configuration Nginx personnalisée
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# # Copier les fichiers compilés
-# COPY --from=build /app/dist/le-bouton-rouge-frontend/browser /usr/share/nginx/html
-
-# # Donner les permissions de lecture à Nginx
-# RUN chown -R nginx:nginx /usr/share/nginx/html
-
-# EXPOSE 80
-
-# USER nginx
-
-
-# syntax=docker/dockerfile:1
-
-# ============================================================
-# BUILD
-# ============================================================
-
-FROM node:22-slim AS builder
+# Étape 1 : Construire l'application frontend
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -45,39 +7,35 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+RUN npm run build
 
-ARG ENV=production
+# Étape 2 : Servir les fichiers avec Nginx
+FROM nginx:alpine
 
-RUN case "$ENV" in \
-      production|preprod) ;; \
-      *) echo "Unsupported Angular environment: $ENV" >&2; exit 1 ;; \
-    esac \
-    && npm run ng -- build --configuration="$ENV"
+# Mettre à jour les paquets système
+RUN apk upgrade --no-cache
 
-
-# ============================================================
-# RUNTIME
-# ============================================================
-
-FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
-
-USER root
-RUN apk upgrade --no-cache libexpat
-USER 101
-
+# Copier la configuration Nginx personnalisée
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=builder \
-    --chown=101:0 \
-    /app/dist/angular-starter/browser \
-    /usr/share/nginx/html
+# Copier les fichiers compilés
+COPY --from=build /app/dist/le-bouton-rouge-frontend/browser /usr/share/nginx/html
 
+# Préparer les répertoires nécessaires à Nginx
+RUN mkdir -p /tmp/nginx/client_temp \
+             /tmp/nginx/proxy_temp \
+             /tmp/nginx/fastcgi_temp \
+             /tmp/nginx/uwsgi_temp \
+             /tmp/nginx/scgi_temp \
+    && chown -R nginx:nginx /usr/share/nginx/html /tmp/nginx \
+    && touch /tmp/nginx.pid \
+    && chown nginx:nginx /tmp/nginx.pid
 
-USER 101
+# Utiliser des chemins temporaires accessibles à nginx
+RUN printf '\nclient_body_temp_path /tmp/nginx/client_temp;\nproxy_temp_path /tmp/nginx/proxy_temp;\nfastcgi_temp_path /tmp/nginx/fastcgi_temp;\nuwsgi_temp_path /tmp/nginx/uwsgi_temp;\nscgi_temp_path /tmp/nginx/scgi_temp;\npid /tmp/nginx.pid;\n' > /etc/nginx/conf.d/zz-temp-paths.conf
 
-EXPOSE 8080
+EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1
+USER nginx
 
 CMD ["nginx", "-g", "daemon off;"]
