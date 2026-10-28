@@ -1,22 +1,18 @@
-
-# Utiliser Node.js 22 sur Alpine Linux
 FROM node:22-alpine
 
 WORKDIR /app
 
-# Mettre à jour npm et ses dépendances intégrées
+# Mettre à jour npm pour corriger les vulnérabilités de ses dépendances
 RUN npm install --global npm@latest
 
-# Copier les fichiers de dépendances du backend
+# Installer les dépendances de production
 COPY package*.json ./
-
-# Installer uniquement les dépendances de production
 RUN npm install --omit=dev
 
-# Copier le serveur et attribuer les droits à l'utilisateur node
+# Copier le serveur
 COPY --chown=node:node server.js ./
 
-# Exécuter l'application sans privilèges root
+# Utiliser un utilisateur non privilégié
 USER node
 
 EXPOSE 3000
