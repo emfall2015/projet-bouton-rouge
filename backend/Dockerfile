@@ -1,12 +1,38 @@
+# FROM node:22-alpine
+
+# WORKDIR /app
+
+# # Mettre à jour npm pour corriger les vulnérabilités de ses dépendances
+# RUN npm install --global npm@latest
+
+# # Installer les dépendances de production
+# COPY package*.json ./
+# RUN npm install --omit=dev
+
+# # Copier le serveur
+# COPY --chown=node:node server.js ./
+
+# # Utiliser un utilisateur non privilégié
+# USER node
+
+# EXPOSE 3000
+
+# CMD ["node", "server.js"]
+
+
 FROM node:22-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev \
+    && npm cache clean --force \
+    && rm -rf "$(npm root -g)/npm"
 
-COPY server.js ./
+COPY --chown=node:node server.js ./
+
+USER node
 
 EXPOSE 3000
 

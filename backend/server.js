@@ -85,7 +85,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-// app.listen(PORT, "0.0.0.0", () => {
-// 	console.log(`API démarrée sur le port ${PORT}`);
-// });
-// module.exports = app;
